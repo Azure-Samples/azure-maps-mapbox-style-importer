@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Add a polygon to a map using a GeoJSON source - Azure Maps Web SDK Samples</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="This sample loads Mapbox styles of a GeoJSON polygon into Azure Maps." />
+    <meta name="keywords"
+        content="Microsoft maps, maps, map, API, SDK, GIS, mapbox, mapbox style spec, mapbox style specification" />
+    <meta name="author" content="Microsoft Azure Maps" />
+
+    <!-- Add references to the Azure Maps Map control JavaScript and CSS files. -->
+    <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.css"
+        type="text/css" />
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.js"></script>
+
+    <!-- Load in the JavaScript that has our custom control. -->
+    <script src="../dist/azure-maps-mapbox-style-importer.js"></script>
+
+    <script type='text/javascript'>
+        var map;
+
+        function GetMap() {
+            //Initialize a map instance.
+            map = new atlas.Map('myMap', {
+                style: 'grayscale_light',
+                view: 'Auto',
+                center: [-68.137343, 45.137451], 
+                zoom: 5,
+
+                //Add your Azure Maps key to the map SDK. Get an Azure Maps key at https://azure.com/maps. NOTE: The primary key should be used as the key.
+                authOptions: {
+                    authType: 'subscriptionKey',
+                    subscriptionKey: '<Your-Azure-Maps-Key>'
+                }
+            });
+
+            //Wait until the map resources are ready.
+            map.events.add('ready', function () {
+
+                //Create an instance of the Mapbox style importer.
+                var importer = new atlas.MapboxStyleImporter(map);
+
+                //Import a Mapbox source.
+                importer.addSource('maine', {
+                    'type': 'geojson',
+                    'data': {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Polygon',
+                            // These coordinates outline Maine.
+                            'coordinates': [
+                                [
+                                    [-67.13734, 45.13745],
+                                    [-66.96466, 44.8097],
+                                    [-68.03252, 44.3252],
+                                    [-69.06, 43.98],
+                                    [-70.11617, 43.68405],
+                                    [-70.64573, 43.09008],
+                                    [-70.75102, 43.08003],
+                                    [-70.79761, 43.21973],
+                                    [-70.98176, 43.36789],
+                                    [-70.94416, 43.46633],
+                                    [-71.08482, 45.30524],
+                                    [-70.66002, 45.46022],
+                                    [-70.30495, 45.91479],
+                                    [-70.00014, 46.69317],
+                                    [-69.23708, 47.44777],
+                                    [-68.90478, 47.18479],
+                                    [-68.2343, 47.35462],
+                                    [-67.79035, 47.06624],
+                                    [-67.79141, 45.70258],
+                                    [-67.13734, 45.13745]
+                                ]
+                            ]
+                        }
+                    }
+                });
+
+                // Add a new layer to visualize the polygon.
+                importer.addLayer({
+                    'id': 'maine',
+                    'type': 'fill',
+                    'source': 'maine', // reference the data source
+                    'layout': {},
+                    'paint': {
+                        'fill-color': '#0080ff', // blue color fill
+                        'fill-opacity': 0.5
+                    }
+                });
+                // Add a black outline around the polygon.
+                importer.addLayer({
+                    'id': 'outline',
+                    'type': 'line',
+                    'source': 'maine',
+                    'layout': {},
+                    'paint': {
+                        'line-color': '#000',
+                        'line-width': 3
+                    }
+                });
+            });
+        }
+    </script>
+</head>
+
+<body onload="GetMap()">
+    <div id="myMap" style="position:relative;width:100%;min-width:290px;height:600px;"></div>
+
+    <fieldset style="width:calc(100% - 30px);min-width:290px;margin-top:10px;">
+        <legend>
+            <h1 style="font-size:16px">Add a polygon to a map using a GeoJSON source</h1>
+            This sample loads Mapbox styles of a GeoJSON polygon into Azure Maps.
+            This sample is based on this <a href="https://docs.mapbox.com/mapbox-gl-js/example/geojson-polygon/">Mapbox
+                example</a>.
+        </legend>
+    </fieldset>
+</body>
+
+</html>

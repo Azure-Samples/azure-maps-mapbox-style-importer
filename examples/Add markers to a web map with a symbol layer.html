@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Add markers to a web map with a symbol layer - Azure Maps Web SDK Samples</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="This sample loads Mapbox styles using a GeoJSON points and a custom image into Azure Maps." />
+    <meta name="keywords" content="Microsoft maps, maps, map, API, SDK, GIS, mapbox, mapbox style spec, mapbox style specification" />
+    <meta name="author" content="Microsoft Azure Maps" />
+
+    <!-- Add references to the Azure Maps Map control JavaScript and CSS files. -->
+    <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.css" type="text/css" />
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.js"></script>
+
+    <!-- Load in the JavaScript that has our custom control. -->
+    <script src="../dist/azure-maps-mapbox-style-importer.js"></script>
+
+    <script type='text/javascript'>
+        var map;
+
+        function GetMap() {
+            //Initialize a map instance.
+            map = new atlas.Map('myMap', {
+                style: 'grayscale_light',
+                view: 'Auto',
+                center: [-96, 37.8],
+                zoom: 2,
+
+                //Add your Azure Maps key to the map SDK. Get an Azure Maps key at https://azure.com/maps. NOTE: The primary key should be used as the key.
+                authOptions: {
+                    authType: 'subscriptionKey',
+                    subscriptionKey: '<Your-Azure-Maps-Key>'
+                }
+            });
+
+            //Wait until the map resources are ready.
+            map.events.add('ready', function () {
+
+                //Load a custom image using the Azure Maps SDK.
+                map.imageSprite.add('custom-marker', 'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png').then(function () {
+
+                    //Create an instance of the Mapbox style importer.
+                    var importer = new atlas.MapboxStyleImporter(map);
+
+                    //Import a Mapbox source.
+                    // Add a GeoJSON source with 2 points
+                    importer.addSource('points', {
+                        'type': 'geojson',
+                        'data': {
+                            'type': 'FeatureCollection',
+                            'features': [
+                                {
+                                    // feature for Mapbox DC
+                                    'type': 'Feature',
+                                    'geometry': {
+                                        'type': 'Point',
+                                        'coordinates': [
+                                            -77.03238901390978, 38.913188059745586
+                                        ]
+                                    },
+                                    'properties': {
+                                        'title': 'Mapbox DC'
+                                    }
+                                },
+                                {
+                                    // feature for Mapbox SF
+                                    'type': 'Feature',
+                                    'geometry': {
+                                        'type': 'Point',
+                                        'coordinates': [-122.414, 37.776]
+                                    },
+                                    'properties': {
+                                        'title': 'Mapbox SF'
+                                    }
+                                }
+                            ]
+                        }
+                    });
+
+                    // Add a symbol layer
+                    importer.addLayer({
+                        'id': 'points',
+                        'type': 'symbol',
+                        'source': 'points',
+                        'layout': {
+                            'icon-image': 'custom-marker',
+                            // get the title name from the source's "title" property
+                            'text-field': ['get', 'title'],
+                            'text-font': [
+                                'Open Sans Semibold',
+                                'Arial Unicode MS Bold'
+                            ],
+                            'text-offset': [0, 1.25],
+                            'text-anchor': 'top'
+                        }
+                    });
+                }
+                );
+            });
+        }
+    </script>
+</head>
+
+<body onload="GetMap()">
+    <div id="myMap" style="position:relative;width:100%;min-width:290px;height:600px;"></div>
+
+    <fieldset style="width:calc(100% - 30px);min-width:290px;margin-top:10px;">
+        <legend>
+            <h1 style="font-size:16px">Add markers to a web map with a symbol layer</h1>
+            This sample loads Mapbox styles using a GeoJSON points and a custom image into Azure Maps.
+            This sample is based on this <a href="https://docs.mapbox.com/mapbox-gl-js/example/geojson-markers/">Mapbox example</a>.
+        </legend>
+    </fieldset>
+</body>
+
+</html>
