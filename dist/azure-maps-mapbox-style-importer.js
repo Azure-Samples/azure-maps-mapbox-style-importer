@@ -343,6 +343,17 @@ MIT License
                 default:
                     //Lookup alternate name, where values stay the same.
                     var azName = MapboxStyleImporter.mbToAzName[key];
+                    //If no known mapping of names, try snapping to the common change of dashed to camel casing. 
+                    //This will increase the chance of future features in azure Maps automatically working with this module.
+                    if (!azName) {
+                        azName = self.mbNameToCamelCase(key);
+                        if (key.startsWith('text-')) {
+                            azName = azName.replace('text', 'textOptions-');
+                        }
+                        else if (key.startsWith('icon-')) {
+                            azName = azName.replace('icon', 'iconOptions-');
+                        }
+                    }
                     if (azName) {
                         //Handle symbol layer options which separates text and icon options for clarity.
                         if (azName.indexOf('-') > -1) {
@@ -359,6 +370,15 @@ MIT License
                     break;
             }
         };
+        MapboxStyleImporter.prototype.mbNameToCamelCase = function (input) {
+            var idx = input.indexOf('-');
+            if (idx > -1) {
+                input = input.substr(idx + 1);
+            }
+            return input.toLowerCase().replace(/-(.)/g, function (match, group1) {
+                return group1.toUpperCase();
+            });
+        };
         /** List of supported Mapbox layer types. */
         MapboxStyleImporter.supportedMBLayers = ['circle', 'fill', 'fill-extrusion', 'line', 'heatmap', 'raster', 'symbol'];
         /** List of supported Mapbox source types. */
@@ -368,37 +388,37 @@ MIT License
          */
         MapboxStyleImporter.mbToAzName = {
             'source-layer': 'sourceLayer',
-            'filter': 'filter',
+            // 'filter': 'filter',
             'minzoom': 'minZoom',
             'maxzoom': 'maxZoom',
             //Light settings.
-            'anchor': 'anchor',
-            'color': 'color',
-            'intensity': 'intensity',
-            'position': 'position',
+            // 'anchor': 'anchor',
+            // 'color': 'color',
+            // 'intensity': 'intensity',
+            //  'position': 'position',
             //GeoJson options
-            'buffer': 'buffer',
-            'cluster': 'cluster',
-            'clusterProperties': 'clusterProperties',
-            'clusterMaxZoom': 'clusterMaxZoom',
-            'clusterRadius': 'clusterRadius',
-            'lineMetrics': 'lineMetrics',
-            'tolerance': 'tolerance',
+            //  'buffer': 'buffer',
+            //  'cluster': 'cluster',
+            //  'clusterProperties': 'clusterProperties',
+            //  'clusterMaxZoom': 'clusterMaxZoom',
+            //  'clusterRadius': 'clusterRadius',
+            //  'lineMetrics': 'lineMetrics',
+            //   'tolerance': 'tolerance',
             //Raster/image/Vector source
-            'tileSize': 'tileSize',
-            'url': 'url',
-            'bounds': 'bounds',
-            'coordinates': 'coordinates',
+            //   'tileSize': 'tileSize',
+            //   'url': 'url',
+            //   'bounds': 'bounds',
+            //   'coordinates': 'coordinates',
             //raster/MediaOptions
             'raster-brightness-min': 'minBrightness',
             'raster-brightness-max': 'maxBrightness',
-            'raster-contrast': 'contrast',
-            'raster-fade-duration': 'fadeDuration',
-            'raster-hue-rotate': 'hueRotation',
-            'raster-opacity': 'opacity',
-            'raster-saturation': 'saturation',
+            //  'raster-contrast': 'contrast',
+            //   'raster-fade-duration': 'fadeDuration',
+            //  'raster-hue-rotate': 'hueRotation',
+            // 'raster-opacity': 'opacity',
+            // 'raster-saturation': 'saturation',
             //line/LineLayer options
-            'line-blur': 'blur',
+            // 'line-blur': 'blur',
             'line-cap': 'lineCap',
             'line-color': 'strokeColor',
             'line-dasharray': 'strokeDashArray',
@@ -406,9 +426,9 @@ MIT License
             'line-gradient': 'strokeGradient',
             'line-join': 'lineJoin',
             'line-opacity': 'strokeOpacity',
-            'line-translate': 'translate',
-            'line-translate-anchor': 'translateAnchor',
-            'line-offset': 'offset',
+            // 'line-translate': 'translate',
+            // 'line-translate-anchor': 'translateAnchor',
+            // 'line-offset': 'offset',
             //fill/PolygonLayer options
             'fill-color': 'fillColor',
             'fill-opacity': 'fillOpacity',
@@ -423,20 +443,20 @@ MIT License
             'fill-extrusion-translate-anchor': 'translateAnchor',
             'fill-extrusion-vertical-gradient': 'verticalGradient',
             //Circle/BubbleLayer options
-            'circle-blur': 'blur',
-            'circle-color': 'color',
-            'circle-opacity': 'opacity',
-            'circle-pitch-alignment': 'pitchAlignment',
-            'circle-radius': 'radius',
+            // 'circle-blur': 'blur',
+            // 'circle-color': 'color',
+            // 'circle-opacity': 'opacity',
+            // 'circle-pitch-alignment': 'pitchAlignment',
+            // 'circle-radius': 'radius',
             'circle-stroke-color': 'strokeColor',
             'circle-stroke-opacity': 'strokeOpacity',
             'circle-stroke-width': 'strokeWidth',
             //Heatmap options
-            'heatmap-color': 'color',
-            'heatmap-intensity': 'intensity',
-            'heatmap-opacity': 'opacity',
-            'heatmap-radius': 'radius',
-            'heatmap-weight': 'weight',
+            // 'heatmap-color': 'color',
+            // 'heatmap-intensity': 'intensity',
+            // 'heatmap-opacity': 'opacity',
+            // 'heatmap-radius': 'radius',
+            // 'heatmap-weight': 'weight',
             //Symbol base options
             'symbol-spacing': 'lineSpacing',
             'symbol-placement': 'placement',
