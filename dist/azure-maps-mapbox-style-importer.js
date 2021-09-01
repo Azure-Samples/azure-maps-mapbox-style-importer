@@ -45,7 +45,7 @@ MIT License
             var map = self._map;
             if (mapboxStyle.light) {
                 map.setStyle({
-                    light: self.convertOptions(mapboxStyle.light)
+                    light: self._convertOptions(mapboxStyle.light)
                 });
             }
             if (mapboxStyle.sources) {
@@ -66,7 +66,7 @@ MIT License
         MapboxStyleImporter.prototype.addSource = function (id, mapboxSource) {
             var self = this;
             var map = self._map;
-            var opt = self.convertOptions(mapboxSource);
+            var opt = self._convertOptions(mapboxSource);
             switch (mapboxSource.type) {
                 case 'image':
                 case 'raster':
@@ -75,7 +75,7 @@ MIT License
                     }
                     break;
                 case 'geojson':
-                    self.addDataSource(opt, mapboxSource, id);
+                    self._addDataSource(opt, mapboxSource, id);
                     break;
                 case 'vector':
                     map.sources.add(new azmaps.source.VectorTileSource(id, opt));
@@ -86,6 +86,7 @@ MIT License
          * Converts a Mapbox style layer to an Azure Map layer and adds it to a map.
          * @param mapboxLayer Mapbox layer to add to map.
          * @param beforeLayer The ID of a layer to add this layer before.
+         * @returns Azure Maps layer instance or null.
          */
         MapboxStyleImporter.prototype.addLayer = function (mapboxLayer, beforeLayer) {
             var self = this;
@@ -99,7 +100,7 @@ MIT License
                     }
                 }
                 else {
-                    var s = self.convertOptions(source);
+                    var s = self._convertOptions(source);
                     //Source is specified inline, need to extract.
                     switch (source.type) {
                         case 'image':
@@ -107,7 +108,7 @@ MIT License
                             source = s;
                             break;
                         case 'geojson':
-                            source = self.addDataSource(opt, source);
+                            source = self._addDataSource(opt, source);
                             break;
                         case 'vector':
                             source = new azmaps.source.VectorTileSource(null, s);
@@ -116,7 +117,7 @@ MIT License
                 }
                 var layer;
                 var id = mapboxLayer.id;
-                var opt = self.convertOptions(mapboxLayer);
+                var opt = self._convertOptions(mapboxLayer);
                 //Each layer merges the parsed options with the default Mapbox options (Azure Maps sometimes uses different defaults).
                 switch (mapboxLayer.type) {
                     case 'circle':
@@ -199,6 +200,22 @@ MIT License
                         }
                     }
                     map.layers.add(layer, beforeLayer);
+                    return layer;
+                }
+            }
+            return null;
+        };
+        /**
+         * Updates the style options of a layer.
+         * @param layer The layer id or instance to set the options on.
+         * @param options Mapbox or Azure Maps style options to apply to the layer.
+         */
+        MapboxStyleImporter.prototype.setLayerOptions = function (layer, options) {
+            if (layer) {
+                var l = (typeof layer === 'string') ? this._map.layers.getLayerById(layer) : layer;
+                if (l['setOptions']) {
+                    var opt = this._convertOptions(options);
+                    l['setOptions'](opt);
                 }
             }
         };
@@ -208,7 +225,7 @@ MIT License
          * @param id The id of the source, if there is one.
          * @returns An Azure Maps DataSource.
          */
-        MapboxStyleImporter.prototype.addDataSource = function (azOptions, mbSource, id) {
+        MapboxStyleImporter.prototype._addDataSource = function (azOptions, mbSource, id) {
             var source = new azmaps.source.DataSource(id, azOptions);
             this._map.sources.add(source);
             if (mbSource.data) {
@@ -228,17 +245,17 @@ MIT License
          * @param mbSource Mapbox options
          * @returns Azure Maps options.
          */
-        MapboxStyleImporter.prototype.convertOptions = function (mbOptions) {
+        MapboxStyleImporter.prototype._convertOptions = function (mbOptions) {
             var opt = {};
             var self = this;
             Object.keys(mbOptions).forEach(function (key) {
-                self.extractOption(key, mbOptions, opt);
+                self._extractOption(key, mbOptions, opt);
             });
             if (mbOptions.paint) {
-                Object.assign(opt, self.convertOptions(mbOptions.paint));
+                Object.assign(opt, self._convertOptions(mbOptions.paint));
             }
             if (mbOptions.layout) {
-                Object.assign(opt, self.convertOptions(mbOptions.layout));
+                Object.assign(opt, self._convertOptions(mbOptions.layout));
             }
             return opt;
         };
@@ -248,7 +265,7 @@ MIT License
          * @param mbOptions Mapbox options
          * @param azOptions Azure Maps option.
          */
-        MapboxStyleImporter.prototype.extractOption = function (key, mbOptions, azOptions) {
+        MapboxStyleImporter.prototype._extractOption = function (key, mbOptions, azOptions) {
             var self = this;
             var val = mbOptions[key];
             switch (key) {
@@ -340,13 +357,20 @@ MIT License
                         azOptions.iconOptions = Object.assign(azOptions.iconOptions || {}, { image: val });
                     }
                     break;
+                //Add support for specific Azure Maps styles.
+                case "iconOptions":
+                    azOptions.iconOptions = Object.assign(azOptions.iconOptions || {}, val || {});
+                    break;
+                case "textOptions":
+                    azOptions.textOptions = Object.assign(azOptions.textOptions || {}, val || {});
+                    break;
                 default:
                     //Lookup alternate name, where values stay the same.
                     var azName = MapboxStyleImporter.mbToAzName[key];
                     //If no known mapping of names, try snapping to the common change of dashed to camel casing. 
                     //This will increase the chance of future features in azure Maps automatically working with this module.
                     if (!azName) {
-                        azName = self.mbNameToCamelCase(key);
+                        azName = self._mbNameToCamelCase(key);
                         if (key.startsWith('text-')) {
                             azName = azName.replace('text', 'textOptions-');
                         }
@@ -370,7 +394,7 @@ MIT License
                     break;
             }
         };
-        MapboxStyleImporter.prototype.mbNameToCamelCase = function (input) {
+        MapboxStyleImporter.prototype._mbNameToCamelCase = function (input) {
             var idx = input.indexOf('-');
             if (idx > -1) {
                 input = input.substr(idx + 1);
@@ -387,6 +411,7 @@ MIT License
          * Mapbox to Azure Maps name of properties where the values are the same and don't need any conversion.
          */
         MapboxStyleImporter.mbToAzName = {
+            //Many options are commented out as they are automatically detected.
             'source-layer': 'sourceLayer',
             // 'filter': 'filter',
             'minzoom': 'minZoom',

@@ -1,6 +1,17 @@
 import * as azmaps from 'azure-maps-control';
-import { map } from 'lodash';
 import * as mb from 'mapbox-gl';
+
+/**
+ * Mapbox layer options.
+ */
+export interface MapboxLayerOptions {
+    minzoom?: number | undefined;
+    maxzoom?: number | undefined;
+
+    filter?: any[] | undefined;
+    layout?: mb.AnyLayout | undefined;
+    paint?: mb.AnyPaint | undefined;
+}
 
 /** A class that converts Mapbox styles into native Azure Maps classes and imports them into an Azure Maps instance. */
 export class MapboxStyleImporter {
@@ -154,7 +165,7 @@ export class MapboxStyleImporter {
 
         if (mapboxStyle.light) {
             map.setStyle({
-                light: self.convertOptions(mapboxStyle.light)
+                light: self._convertOptions(mapboxStyle.light)
             });
         }
 
@@ -178,7 +189,7 @@ export class MapboxStyleImporter {
     public addSource(id: string, mapboxSource: mb.Source): void {
         var self = this;
         var map = self._map;
-        var opt = self.convertOptions(mapboxSource);
+        var opt = self._convertOptions(mapboxSource);
 
         switch (mapboxSource.type) {
             case 'image':
@@ -188,7 +199,7 @@ export class MapboxStyleImporter {
                 }
                 break;
             case 'geojson':
-                self.addDataSource(opt, mapboxSource as mb.GeoJSONSourceOptions, id);
+                self._addDataSource(opt, mapboxSource as mb.GeoJSONSourceOptions, id);
                 break;
             case 'vector':
                 map.sources.add(new azmaps.source.VectorTileSource(id, opt));
@@ -200,11 +211,12 @@ export class MapboxStyleImporter {
      * Converts a Mapbox style layer to an Azure Map layer and adds it to a map.
      * @param mapboxLayer Mapbox layer to add to map.
      * @param beforeLayer The ID of a layer to add this layer before.
+     * @returns Azure Maps layer instance or null.
      */
-    public addLayer(mapboxLayer: mb.Layer, beforeLayer?: string): void {
+    public addLayer(mapboxLayer: mb.Layer, beforeLayer?: string): azmaps.layer.Layer {
         var self = this;
         var map = self._map;
-
+        
         if (MapboxStyleImporter.supportedMBLayers.indexOf(mapboxLayer.type) > -1) {
             var source: any = mapboxLayer['source'];
 
@@ -214,7 +226,7 @@ export class MapboxStyleImporter {
                     source = self.rasterSources[source];
                 }
             } else {
-                var s = self.convertOptions(source);
+                var s = self._convertOptions(source);
 
                 //Source is specified inline, need to extract.
                 switch (source.type) {
@@ -223,7 +235,7 @@ export class MapboxStyleImporter {
                         source = s;
                         break;
                     case 'geojson':
-                        source = self.addDataSource(opt, source as mb.GeoJSONSourceOptions);
+                        source = self._addDataSource(opt, source as mb.GeoJSONSourceOptions);
                         break;
                     case 'vector':
                         source = new azmaps.source.VectorTileSource(null, s);
@@ -233,7 +245,7 @@ export class MapboxStyleImporter {
 
             var layer: azmaps.layer.Layer;
             var id = mapboxLayer.id;
-            var opt = self.convertOptions(mapboxLayer);
+            var opt = self._convertOptions(mapboxLayer);
 
             //Each layer merges the parsed options with the default Mapbox options (Azure Maps sometimes uses different defaults).
             switch (mapboxLayer.type) {
@@ -320,8 +332,31 @@ export class MapboxStyleImporter {
                 }
 
                 map.layers.add(layer, beforeLayer);
+                return layer;
             }
         }
+
+        return null;
+    }
+
+    /**
+     * Updates the style options of a layer.
+     * @param layer The layer id or instance to set the options on.
+     * @param options Mapbox or Azure Maps style options to apply to the layer.
+     */
+    public setLayerOptions(layer: string | azmaps.layer.Layer, options: 
+        MapboxLayerOptions | azmaps.BubbleLayerOptions | azmaps.IconOptions | azmaps.TextOptions | azmaps.LayerOptions | azmaps.HeatMapLayerOptions | azmaps.LineLayerOptions | 
+        azmaps.PolygonLayerOptions | azmaps.PolygonExtrusionLayerOptions | azmaps.SymbolLayerOptions | azmaps.ImageLayerOptions | azmaps.TileLayerOptions): void {
+        
+            if(layer){
+                var l = (typeof layer === 'string') ? this._map.layers.getLayerById(layer): layer;
+
+                if(l['setOptions']){
+                    var opt = this._convertOptions(options);
+
+                    l['setOptions'](opt);
+                }
+            }
     }
 
     /**
@@ -330,7 +365,7 @@ export class MapboxStyleImporter {
      * @param id The id of the source, if there is one.
      * @returns An Azure Maps DataSource.
      */
-    private addDataSource(azOptions: azmaps.DataSourceOptions, mbSource: mb.GeoJSONSourceOptions, id?: string): azmaps.source.DataSource {
+    private _addDataSource(azOptions: azmaps.DataSourceOptions, mbSource: mb.GeoJSONSourceOptions, id?: string): azmaps.source.DataSource {
         var source = new azmaps.source.DataSource(id, azOptions);
         this._map.sources.add(source);
 
@@ -352,20 +387,20 @@ export class MapboxStyleImporter {
      * @param mbSource Mapbox options
      * @returns Azure Maps options.
      */
-    private convertOptions(mbOptions: any): any {
+    private _convertOptions(mbOptions: any): any {
         var opt: any = {};
         var self = this;
 
         Object.keys(mbOptions).forEach(key => {
-            self.extractOption(key, mbOptions, opt);
+            self._extractOption(key, mbOptions, opt);
         });
 
         if (mbOptions.paint) {
-            Object.assign(opt, self.convertOptions(mbOptions.paint));
+            Object.assign(opt, self._convertOptions(mbOptions.paint));
         }
 
         if (mbOptions.layout) {
-            Object.assign(opt, self.convertOptions(mbOptions.layout));
+            Object.assign(opt, self._convertOptions(mbOptions.layout));
         }
 
         return opt;
@@ -377,7 +412,7 @@ export class MapboxStyleImporter {
      * @param mbOptions Mapbox options
      * @param azOptions Azure Maps option.
      */
-    private extractOption(key: string, mbOptions: any, azOptions: any): void {
+    private _extractOption(key: string, mbOptions: any, azOptions: any): void {
         var self = this;
         var val = mbOptions[key];
         switch (key) {
@@ -470,6 +505,14 @@ export class MapboxStyleImporter {
                         azOptions.iconOptions = Object.assign(azOptions.iconOptions || {}, { image: val });
                     }
                 break;
+
+                //Add support for specific Azure Maps styles.
+                case "iconOptions":
+                    azOptions.iconOptions = Object.assign(azOptions.iconOptions || {}, val || {});
+                    break;
+                case "textOptions":
+                    azOptions.textOptions = Object.assign(azOptions.textOptions || {}, val || {});
+                    break;
             default:
                 //Lookup alternate name, where values stay the same.
                 var azName = MapboxStyleImporter.mbToAzName[key];
@@ -477,7 +520,7 @@ export class MapboxStyleImporter {
                 //If no known mapping of names, try snapping to the common change of dashed to camel casing. 
                 //This will increase the chance of future features in azure Maps automatically working with this module.
                 if(!azName){
-                    azName = self.mbNameToCamelCase(key);
+                    azName = self._mbNameToCamelCase(key);
 
                     if(key.startsWith('text-')){
                         azName = azName.replace('text', 'textOptions-');
@@ -505,7 +548,7 @@ export class MapboxStyleImporter {
         }
     }
 
-    private mbNameToCamelCase(input: string): string { 
+    private _mbNameToCamelCase(input: string): string { 
         var idx = input.indexOf('-');
         if(idx > -1){
             input = input.substr(idx + 1);

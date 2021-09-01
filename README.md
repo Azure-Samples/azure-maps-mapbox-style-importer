@@ -13,6 +13,10 @@ products:
 
 An Azure Maps Web SDK module that takes a Mapbox style object and converts it into native Azure Maps classes and adds it to a map instance. Extracts Mapbox light, source, and layer styles, converts them to Azure Maps comparable values, and applies it to the map.
 
+- Supported Sources: vector, raster, geojson, image
+- Supported Layers: circle, fill, fill-extrusion, line, heatmap, raster, symbol
+- Handles a combinations of Mapbox and Azure Maps style properties to be passed in.
+
 ## Getting started
 
 Download the project and copy the `azure-maps-mapbox-style-importer` JavaScript file from the `dist` folder into your project.
@@ -112,6 +116,13 @@ map.events.add('ready', function () {
             }
         }]
     });
+
+    //Update the style options of a layer.     
+    importer.addLayer('my-circle-layer', {
+        'paint': {
+            'circle-color': 'red'
+        }
+    });
 });
 ```
 
@@ -131,9 +142,20 @@ A class that converts Mapbox styles into native Azure Maps classes and imports t
 
 | Name | Return type | Description |
 |------|-------------|-------------|
-| `addStyle(mapboxStyle: any)` | | Extracts Mapbox light, source, and layer styles, converts them to Azure Maps comparable values, and applies it to the map. |
-| `addSource(id: string, mapboxSource: any)` | | Converts a Mapbox style source to an Azure Map source and adds it to a map. |
-| `addLayer(mapboxLayer: any, beforeLayer?: string)` | | Converts a Mapbox style layer to an Azure Map layer and adds it to a map. |
+| `addLayer(mapboxLayer: mapbox.Layer, beforeLayer?: string)` | `atlas.layer.Layer` | Converts a Mapbox style layer to an Azure Map layer and adds it to a map. |
+| `setLayerOptions(layer: string \| atlas.layer.Layer, options: MapboxLayerOptions \| atlas.BubbleLayerOptions \| atlas.IconOptions \| atlas.TextOptions \| atlas.LayerOptions \| atlas.HeatMapLayerOptions \| atlas.LineLayerOptions \| atlas.PolygonLayerOptions \| atlas.PolygonExtrusionLayerOptions \| atlas.SymbolLayerOptions \| atlas.ImageLayerOptions \| atlas.TileLayerOptions)` | | Updates the style options of a layer. Note that this appends/ overwrites individual style options, and does not replace the whole style option unless all previously specified options are included in the new options. |
+| `addSource(id: string, mapboxSource: mapbox.Source)` | | Converts a Mapbox style source to an Azure Map source and adds it to a map. |
+| `addStyle(mapboxStyle: mapbox.Style)` | | Extracts Mapbox light, source, and layer styles, converts them to Azure Maps comparable values, and applies it to the map. |
+
+### MapboxLayerOptions interface
+
+| Name | Type | Description |
+|------|------|-------------|
+| `minzoom` | `number` | Min zoom level of layer. |
+| `maxzoom` | `number` | Max zoom level of layer. |
+| `filter` | `any[]` | Layer filter. |
+| `layout` | `mapbox.AnyLayout` | Mapbox layout options. |
+| `paint` | `mapbox.AnyPaint` | Mapbox paint options. |
 
 ## Related Projects
 

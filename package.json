@@ -1,6 +1,6 @@
 {
   "name": "azure-maps-mapbox-style-importer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "An Azure Maps Web SDK module that takes a Mapbox style object and converts it into native Azure Maps classes and adds it to a map instance.",
   "keywords": [
     "azure",
